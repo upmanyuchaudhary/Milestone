@@ -1,39 +1,28 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
 
-app = FastAPI(
-    title="Milestone API",
-    description="Autonomous portfolio manager for retail investors",
-    version="2.0.0",
-)
+load_dotenv()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-@app.on_event("startup")
-def create_tables():
+if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
+
+if DATABASE_URL and "ssl_context" not in DATABASE_URL:
+    DATABASE_URL += "?ssl_context=True"
+
+engine = create_engine(DATABASE_URL) if DATABASE_URL else None
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) if engine else None
+Base = declarative_base()
+
+
+def get_db():
+    if not SessionLocal:
+        raise RuntimeError("DATABASE_URL not configured")
+    db = SessionLocal()
     try:
-        from database import engine, Base
-        import models
-        if engine:
-            Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print(f"Table creation failed: {e}")
-
-from routers import portfolio, milestone, alerts, auth, home
-
-app.include_router(auth.router,      prefix="/auth",      tags=["Authentication"])
-app.include_router(home.router,      prefix="/home",      tags=["Home"])
-app.include_router(portfolio.router, prefix="/portfolio", tags=["Portfolio"])
-app.include_router(milestone.router, prefix="/milestone", tags=["Milestone"])
-app.include_router(alerts.router,    prefix="/alerts",    tags=["Alerts"])
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "service": "milestone-api"}
+        yield db
+    finally:
+        db.close()
