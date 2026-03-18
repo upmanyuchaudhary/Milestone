@@ -1,1 +1,0 @@
-Supadatabase URL: postgresql://postgres:Milestone_Atul@1234@db.ramnoumsvxvydjsloqjr.supabase.co:5432/postgres
