@@ -21,7 +21,7 @@ git push -u origin main
 ### Step 2 — Supabase
 1. Go to supabase.com → New project
 2. Note your DATABASE_URL from Settings → Database → Connection string (URI)
-3. It will look like: `postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres`
+3. It will look like: `postgresql://postgres:Milestone_Atul@1234@db.ramnoumsvxvydjsloqjr.supabase.co:5432/postgres`(actual URL)
 
 ### Step 3 — Railway (Backend)
 1. Go to railway.app → New project → Deploy from GitHub repo
