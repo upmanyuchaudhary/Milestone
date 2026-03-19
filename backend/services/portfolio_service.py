@@ -55,3 +55,34 @@ def get_allocation_breakdown(db: Session):
             "pct": pct
         })
     return result
+
+
+def sync_holdings_to_db(db: Session, holdings: list):
+    db.query(models.Holding).update({"is_active": False})
+    db.commit()
+
+    synced = 0
+    for h in holdings:
+        existing = db.query(models.Holding).filter(
+            models.Holding.tradingsymbol == h["tradingsymbol"],
+            models.Holding.exchange == h["exchange"]
+        ).first()
+
+        if existing:
+            existing.quantity = h["quantity"]
+            existing.average_buy_price = h["average_buy_price"]
+            existing.is_active = True
+        else:
+            new_holding = models.Holding(
+                tradingsymbol=h["tradingsymbol"],
+                exchange=h["exchange"],
+                quantity=h["quantity"],
+                average_buy_price=h["average_buy_price"],
+                category=h.get("category", "EQUITY"),
+                is_active=True,
+            )
+            db.add(new_holding)
+        synced += 1
+
+    db.commit()
+    return {"status": "success", "synced": synced}
